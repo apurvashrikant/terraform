@@ -3,10 +3,15 @@ jobs:
     machine: true
     steps:
       - checkout
-      - run: docker run --rm -v $(pwd):/src aquasec/tfsec /sec -f json | tee tfsec-output.json
+
+      - run:
+          command: docker run --rm -v $(pwd):/src aquasec/tfsec /src -f json | tee tfsec-output.json
+          when: on_fail             # Even if the job fails, continue to the next stages
+
       - store_artifacts:
           path: tfsec-output.json
           destination: tfsec-artifact
+          when: always
 
   test:
     machine: true
@@ -22,6 +27,7 @@ jobs:
           command: |
             echo "This is an integration step"
             exit 1
+          when: on_fail         # Even if the job fails, continue to the next stages
 
   prod:
     machine: true
@@ -36,7 +42,7 @@ workflows:
       - tfsec
       - test:
           requires:
-            - tfsec 
+            - tfsec
       - integration:
           requires:
             - test
